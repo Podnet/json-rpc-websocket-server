@@ -5,14 +5,17 @@ import json
 
 i = 0
 
+
 @method
 async def ping():
     print("Received a ping request")
     return "pong"
 
+
 @method
-async def test(a,b,c):
+async def test(a, b, c):
     print("Under test method")
+
 
 async def main(websocket, path):
 
