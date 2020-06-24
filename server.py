@@ -1,7 +1,12 @@
 import asyncio
+
+import pyfiglet
 import websockets
-from jsonrpcserver import method, async_dispatch as dispatch
-import json
+from jsonrpcserver import method
+from loguru import logger
+
+# Print the banner
+print(pyfiglet.figlet_format("W S Server", font="slant"))
 
 i = 0
 
@@ -17,12 +22,13 @@ async def test(a, b, c):
     print("Under test method")
 
 
-async def main(websocket, path):
-
-    async for message in websocket:
-        print("####################")
-        print(message)
-        print(type(message))
+async def ws_loop(websocket, path):
+    try:
+        async for message in websocket:
+            logger.info(f"Received a msg from client: {message}")
+            logger.debug(f"Message: {message}")
+    except websockets.exceptions.ConnectionClosedError:
+        logger.error("Connection closed unexpectedly")
 
     # global i
     # recv_data = await websocket.recv()
@@ -47,6 +53,11 @@ async def main(websocket, path):
     #     print("======================")
 
 
-start_server = websockets.serve(main, "0.0.0.0", 5000)
+start_server = websockets.serve(ws_loop, "0.0.0.0", 5000)
 asyncio.get_event_loop().run_until_complete(start_server)
-asyncio.get_event_loop().run_forever()
+logger.info("Listening for incoming connections")
+
+try:
+    asyncio.get_event_loop().run_forever()
+except KeyboardInterrupt:
+    logger.error("Keyboard Interrupt raised. Exiting.")
