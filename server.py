@@ -14,53 +14,49 @@ i = 0
 
 @method
 async def ping():
-    print("Received a ping request")
+    logger.info("ping function executed")
     return "pong"
 
 
 @method
-async def test(a, b, c):
+async def test(param):
     print("Under test method")
+
+
+def clean_data(message):
+    obj = json.loads(message)
+    if not "jsonrpc" in obj:
+
+        # Add JSON RPC key to data
+        obj["jsonrpc"] = "2.0"
+
+        # Delete 'src' key from data
+        del obj["src"]
+
+    return json.dumps(obj)
 
 
 async def ws_loop(websocket, path):
     try:
+
+        # Iterate through incoming msgs, and keep existing connections open
         async for message in websocket:
 
-            logger.info(f"Received a msg from client: {message}")
+            # Clean the msg and log it
             logger.debug(f"Message: {message}")
-            response = await dispatch(message)
+            cleaned_data = clean_data(message)
+
+            # Creating response
+            response = await dispatch(cleaned_data)
             logger.debug(f"Response: {response}")
 
+            # Respond to the client, if required
             if response.wanted:
                 await websocket.send(str(response))
                 logger.info("Response sent")
 
     except websockets.exceptions.ConnectionClosedError:
         logger.error("Connection closed unexpectedly")
-
-    # global i
-    # recv_data = await websocket.recv()
-    # print(f"[{i}] Recv data: {recv_data}")
-    # print(f"[{i}] Recv data type: {type(recv_data)}")
-    # obj = json.loads(recv_data)
-    # if not "jsonrpc" in obj:
-    #     obj["jsonrpc"] = "2.0"
-    #     del obj["src"]
-    #     recv_data = json.dumps(obj)
-    #     print(f"[{i}] Modified recv data: {recv_data}")
-    #
-    # response = await dispatch(recv_data)
-    # print(f"[{i}] Response: {response}")
-    # i += 1
-    #
-    # if not response.wanted:
-    #     print("======================")
-    #
-    # if response.wanted:
-    #     print(f"[{i}] Sending back response")
-    #     await websocket.send(str(response))
-    #     print("======================")
 
 
 start_server = websockets.serve(ws_loop, "0.0.0.0", 5000)
