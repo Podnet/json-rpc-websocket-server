@@ -1,9 +1,10 @@
 import asyncio
+import json
 
 import pyfiglet
 import websockets
-from jsonrpcserver import method
 from loguru import logger
+from jsonrpcserver import method, async_dispatch as dispatch
 
 # Print the banner
 print(pyfiglet.figlet_format("W S Server", font="slant"))
@@ -25,8 +26,16 @@ async def test(a, b, c):
 async def ws_loop(websocket, path):
     try:
         async for message in websocket:
+
             logger.info(f"Received a msg from client: {message}")
             logger.debug(f"Message: {message}")
+            response = await dispatch(message)
+            logger.debug(f"Response: {response}")
+
+            if response.wanted:
+                await websocket.send(str(response))
+                logger.info("Response sent")
+
     except websockets.exceptions.ConnectionClosedError:
         logger.error("Connection closed unexpectedly")
 
@@ -40,13 +49,14 @@ async def ws_loop(websocket, path):
     #     del obj["src"]
     #     recv_data = json.dumps(obj)
     #     print(f"[{i}] Modified recv data: {recv_data}")
+    #
     # response = await dispatch(recv_data)
     # print(f"[{i}] Response: {response}")
     # i += 1
-
+    #
     # if not response.wanted:
     #     print("======================")
-
+    #
     # if response.wanted:
     #     print(f"[{i}] Sending back response")
     #     await websocket.send(str(response))
