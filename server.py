@@ -26,11 +26,13 @@ async def test(param):
 
 
 # For verifying the end device
+@method
 async def verify_device(device_id):
     if device_id in VERIFIED_DEVICES:
+        # generate a unique token here and return it to the user
         return "ok"
     else:
-        return "incorrect"
+        return "invalid"
 
 
 # Accepting sensor data from device
