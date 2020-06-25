@@ -9,7 +9,7 @@ from jsonrpcserver import method, async_dispatch as dispatch
 # Print the banner
 print(pyfiglet.figlet_format("W S Server", font="slant"))
 
-i = 0
+VERIFIED_DEVICES = ["esp32_aa"]
 
 
 @method
@@ -20,9 +20,27 @@ async def ping():
 
 @method
 async def test(param):
-    print("Under test method")
+    logger.info("test function executed")
+    logger.debug(f"test param: {param}")
+    return f"ok"
 
 
+# For verifying the end device
+async def verify_device(device_id):
+    if device_id in VERIFIED_DEVICES:
+        return "ok"
+    else:
+        return "incorrect"
+
+
+# Accepting sensor data from device
+@method
+async def sensor_data(data):
+    logger.debug(data)
+    return "ok"
+
+
+# For cleaning incoming data from client
 def clean_data(message):
     obj = json.loads(message)
     if not "jsonrpc" in obj:
