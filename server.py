@@ -73,7 +73,7 @@ async def ws_loop(websocket, path):
             # Respond to the client, if required
             if response.wanted:
                 await websocket.send(str(response))
-                logger.info("Response sent")
+                logger.success("Response sent")
 
     except websockets.exceptions.ConnectionClosedError:
         logger.error("Connection closed unexpectedly")
