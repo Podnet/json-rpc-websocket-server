@@ -12,5 +12,8 @@ async def main():
         # response = await ws.recv()
         logger.info(f"Response: {response.data}")
 
+        response = await WebSocketsClient(ws).request("test", {"a": 21, "b": 25})
+        logger.info(f"Response: {response.data}")
+
 
 asyncio.get_event_loop().run_until_complete(main())
