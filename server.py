@@ -68,18 +68,24 @@ async def ws_loop(websocket, path):
 
             # Creating response
             response = await dispatch(cleaned_data)
-            logger.debug(f"Response: {response}")
+
+            if not response.wanted:
+                logger.info("Response not wanted by client")
 
             # Respond to the client, if required
             if response.wanted:
+                logger.debug(f"Response: {response}")
                 await websocket.send(str(response))
                 logger.success("Response sent")
 
-    except websockets.exceptions.ConnectionClosedError:
+    except websockets.exceptions.ConnectionClosedError as e:
         logger.error("Connection closed unexpectedly")
+        logger.debug(str(e))
 
 
-start_server = websockets.serve(ws_loop, "0.0.0.0", 5000)
+start_server = websockets.serve(
+    ws_loop, "0.0.0.0", 5000, ping_interval=None, ping_timeout=None
+)
 asyncio.get_event_loop().run_until_complete(start_server)
 logger.info("Listening for incoming connections")
 
