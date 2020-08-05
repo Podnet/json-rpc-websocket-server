@@ -6,6 +6,8 @@ import websockets
 from loguru import logger
 from jsonrpcserver import method, async_dispatch as dispatch
 
+logger.add("server_log_{time}.log")
+
 # Print the banner
 print(pyfiglet.figlet_format("W S Server", font="slant"))
 
@@ -38,7 +40,7 @@ async def verify_device(device_id):
 # Accepting sensor data from device
 @method
 async def sensor_data(data):
-    logger.debug(data)
+    logger.success(data)
     return "ok"
 
 
