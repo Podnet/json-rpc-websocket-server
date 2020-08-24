@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import asyncio
 import json
 
@@ -6,13 +7,13 @@ import websockets
 from loguru import logger
 from jsonrpcserver import method, async_dispatch as dispatch
 
-logger.add("server_log_{time}.log")
+logger.add("server_datalog_{time}.log")
 
 # Print the banner
 print(pyfiglet.figlet_format("W S Server", font="slant"))
 
 VERIFIED_DEVICES = ["esp32_aa"]
-
+PORT = 7000
 
 @method
 async def ping():
@@ -39,9 +40,14 @@ async def verify_device(device_id):
 
 # Accepting sensor data from device
 @method
-async def sensor_data(data):
-    logger.success(data)
-    return "ok"
+async def sensor_data(timestamp, data_points):
+    logger.success(f"Processing data point generated on device at {timestamp} with data -> {data_points}")
+
+    # Do some processing on `data_points` here
+
+    # Return the timestamp of the received msg to let the device know that 
+    # the server has processed the data.
+    return str(timestamp)
 
 
 # For cleaning incoming data from client
@@ -86,10 +92,10 @@ async def ws_loop(websocket, path):
 
 
 start_server = websockets.serve(
-    ws_loop, "0.0.0.0", 5000, ping_interval=None, ping_timeout=None
+    ws_loop, "0.0.0.0", PORT, ping_interval=None, ping_timeout=None
 )
 asyncio.get_event_loop().run_until_complete(start_server)
-logger.info("Listening for incoming connections")
+logger.info(f"Listening for incoming connections on port {PORT}")
 
 try:
     asyncio.get_event_loop().run_forever()
