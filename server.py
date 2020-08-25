@@ -80,20 +80,19 @@ def clean_data(message):
 
 
 async def comcon_task():
-    # Listen to incoming data on ZMQ Socket
-    # Do something when you rx the data
-    # Otherwise just pass
-    
 
     while True:
         message = await zmq_sock.recv()
+        message = message.decode('utf-8')
         logger.info(f"Received a request from COMCON -> {message}")
 
-        await asyncio.sleep(3)
+        if message.lower() == "list":
+            resp = json.dumps(ACTIVE_DEVICES)
+            logger.info(f"Sending list of devices to COMCON. -> {resp}")
+            await zmq_sock.send_string(resp)
         
-        resp = json.dumps(ACTIVE_DEVICES)
-        logger.info(f"Sending reply back to COMCON. -> {resp}")
-        await zmq_sock.send_string(resp)
+        else:
+            await zmq_sock.send_string("unknown")
 
 
 
