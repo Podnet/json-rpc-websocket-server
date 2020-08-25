@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 import asyncio
 import json
+import zmq
+import zmq.asyncio
+
+ctx = zmq.asyncio.Context()
 
 import pyfiglet
 import websockets
@@ -40,14 +44,19 @@ async def verify_device(device_id):
 
 # Accepting sensor data from device
 @method
-async def sensor_data(timestamp, data_points):
-    logger.success(f"Processing data point generated on device at {timestamp} with data -> {data_points}")
+async def sensor_data(data_points):
+
+    logger.success(f"Processing data packet -> {data_points}")
+
+    # logger.success(f"Processing data point generated on device at {timestamp} with data -> {data_points}")
 
     # Do some processing on `data_points` here
 
     # Return the timestamp of the received msg to let the device know that 
     # the server has processed the data.
-    return str(timestamp)
+    # return str(timestamp)
+
+    return "some-timestamp"
 
 
 # For cleaning incoming data from client
@@ -64,7 +73,27 @@ def clean_data(message):
     return json.dumps(obj)
 
 
+async def comcon_task():
+    # Listen to incoming data on ZMQ Socket
+    # Do something when you rx the data
+    # Otherwise just pass
+    zmq_sock = ctx.socket(zmq.REP)
+    zmq_sock.bind("tcp://127.0.0.1:4444")
+
+    while True:
+        message = await zmq_sock.recv()
+        print(f"Received msg from zmq -> {message}")
+
+        await asyncio.sleep(3)
+        
+        print("Sending reply back to comcon.")
+        await zmq_sock.send(b"msg-rx")
+
+
+
 async def ws_loop(websocket, path):
+    bg_task = asyncio.create_task(comcon_task())
+
     try:
 
         # Iterate through incoming msgs, and keep existing connections open
@@ -89,6 +118,8 @@ async def ws_loop(websocket, path):
     except websockets.exceptions.ConnectionClosedError as e:
         logger.error("Connection closed unexpectedly")
         logger.debug(str(e))
+    
+    await bg_task
 
 
 start_server = websockets.serve(
@@ -96,6 +127,7 @@ start_server = websockets.serve(
 )
 asyncio.get_event_loop().run_until_complete(start_server)
 logger.info(f"Listening for incoming connections on port {PORT}")
+
 
 try:
     asyncio.get_event_loop().run_forever()

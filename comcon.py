@@ -2,6 +2,7 @@
 
 import pyfiglet
 import sys
+import zmq
 
 
 def help():
@@ -17,15 +18,23 @@ def help():
     )
 
 
-def list_devices():
+def list_devices(socket):
     print("List of devices connected to server.")
+    socket.send(b"list all devices")
+    print(socket.recv())
 
-def send_to_device(command):
+def send_to_device(socket, command):
     print("Sending a message to device.")
 
 def main():
     print(pyfiglet.figlet_format("COMCON", font="slant"))
     print("Talk to end devices and control them by issuing commands.\n")
+
+    #  Socket to talk to server
+    print("Connecting to zmq socket")
+    context = zmq.Context()
+    socket = context.socket(zmq.REQ)
+    socket.connect("tcp://127.0.0.1:4444")
 
     help()
 
@@ -35,10 +44,10 @@ def main():
             user_command = input("> ")
 
             if user_command.lower() == "list":
-                list_devices()
+                list_devices(socket)
             
             elif user_command.startswith("send "):
-                send_to_device(user_command)
+                send_to_device(socket, user_command)
             
             elif user_command.lower() == "exit":
                 print("\nBoi Boi")
