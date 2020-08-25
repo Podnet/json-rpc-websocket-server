@@ -7,7 +7,7 @@ from loguru import logger
 
 
 async def main():
-    async with websockets.connect("ws://localhost:5000") as ws:
+    async with websockets.connect("ws://localhost:7000") as ws:
 
         # Sending request with correct device ID
         response = await WebSocketsClient(ws).request("verify_device", "esp32_aa")

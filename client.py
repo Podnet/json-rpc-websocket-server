@@ -6,7 +6,7 @@ from jsonrpcclient.clients.websockets_client import WebSocketsClient
 
 
 async def main():
-    async with websockets.connect("ws://localhost:5000") as ws:
+    async with websockets.connect("ws://localhost:7000") as ws:
         response = await WebSocketsClient(ws).request("ping")
         # await ws.send("ping")
         # response = await ws.recv()
