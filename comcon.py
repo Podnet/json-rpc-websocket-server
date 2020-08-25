@@ -3,6 +3,7 @@
 import pyfiglet
 import sys
 import zmq
+import json
 
 
 def help():
@@ -20,8 +21,12 @@ def help():
 
 def list_devices(socket):
     print("List of devices connected to server.")
-    socket.send(b"list all devices")
-    print(socket.recv())
+    socket.send_string("list")
+    resp = socket.recv().decode('utf-8')
+    devices = json.loads(resp)
+
+    for i, dev in enumerate(devices):
+        print(f"{i} -> {dev}")
 
 def send_to_device(socket, command):
     print("Sending a message to device.")
