@@ -3,8 +3,8 @@ import asyncio
 import json
 import zmq
 import zmq.asyncio
+import json
 
-ctx = zmq.asyncio.Context()
 
 import pyfiglet
 import websockets
@@ -17,7 +17,13 @@ logger.add("server_datalog_{time}.log")
 print(pyfiglet.figlet_format("W S Server", font="slant"))
 
 VERIFIED_DEVICES = ["esp32_aa"]
+ACTIVE_DEVICES = []
 PORT = 7000
+
+ctx = zmq.asyncio.Context()
+zmq_sock = ctx.socket(zmq.REP)
+zmq_url = "tcp://127.0.0.1:4444"
+zmq_sock.bind(zmq_url)
 
 @method
 async def ping():
@@ -77,17 +83,17 @@ async def comcon_task():
     # Listen to incoming data on ZMQ Socket
     # Do something when you rx the data
     # Otherwise just pass
-    zmq_sock = ctx.socket(zmq.REP)
-    zmq_sock.bind("tcp://127.0.0.1:4444")
+    
 
     while True:
         message = await zmq_sock.recv()
-        print(f"Received msg from zmq -> {message}")
+        logger.info(f"Received a request from COMCON -> {message}")
 
         await asyncio.sleep(3)
         
-        print("Sending reply back to comcon.")
-        await zmq_sock.send(b"msg-rx")
+        resp = json.dumps(ACTIVE_DEVICES)
+        logger.info(f"Sending reply back to COMCON. -> {resp}")
+        await zmq_sock.send_string(resp)
 
 
 
@@ -98,6 +104,11 @@ async def ws_loop(websocket, path):
 
         # Iterate through incoming msgs, and keep existing connections open
         async for message in websocket:
+
+            # Insert device into ACTIVE_DEVICES list if it does not exists
+            device_addr = f"{websocket.remote_address[0]}:{websocket.remote_address[1]}"
+            if device_addr not in ACTIVE_DEVICES:
+                ACTIVE_DEVICES.append(device_addr)
 
             # Clean the msg and log it
             logger.debug(f"Message: {message}")
@@ -132,4 +143,5 @@ logger.info(f"Listening for incoming connections on port {PORT}")
 try:
     asyncio.get_event_loop().run_forever()
 except KeyboardInterrupt:
+    zmq_sock.unbind(zmq_url)
     logger.error("Keyboard Interrupt raised. Exiting.")
