@@ -10,6 +10,7 @@ import pyfiglet
 import websockets
 from loguru import logger
 from jsonrpcserver import method, async_dispatch as dispatch
+from jsonrpcclient.requests import Request
 
 logger.add("server_datalog_{time}.log")
 
@@ -79,17 +80,29 @@ def clean_data(message):
     return json.dumps(obj)
 
 
-async def comcon_task():
+async def comcon_task(websocket):
 
     while True:
         message = await zmq_sock.recv()
         message = message.decode('utf-8')
+        message = json.loads(message)
         logger.info(f"Received a request from COMCON -> {message}")
 
-        if message.lower() == "list":
+        if message["method"] == "list":
             resp = json.dumps(ACTIVE_DEVICES)
             logger.info(f"Sending list of devices to COMCON. -> {resp}")
             await zmq_sock.send_string(resp)
+        
+        elif message["method"] == "get_data_packet":
+            device_addr_index = int(message["params"]["device_addr_index"])
+            device_addr = ACTIVE_DEVICES[device_addr_index]
+
+            # Remove "device_addr_index" field
+            del message["params"]["device_addr_index"]
+            
+
+            logger.info(f"{device_addr} -> {message}")
+            
         
         else:
             await zmq_sock.send_string("unknown")
@@ -97,7 +110,7 @@ async def comcon_task():
 
 
 async def ws_loop(websocket, path):
-    bg_task = asyncio.create_task(comcon_task())
+    bg_task = asyncio.create_task(comcon_task(websocket))
 
     try:
 
