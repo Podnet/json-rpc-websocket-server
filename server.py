@@ -12,7 +12,7 @@ from loguru import logger
 from jsonrpcserver import method, async_dispatch as dispatch
 from jsonrpcclient.requests import Request
 
-logger.add("server_datalog_{time}.log")
+logger.add("server_datalog_{time}.log", level="ERROR")
 
 # Print the banner
 print(pyfiglet.figlet_format("W S Server", font="slant"))
@@ -51,9 +51,9 @@ async def verify_device(device_id):
 
 # Accepting sensor data from device
 @method
-async def sensor_data(data_points):
+async def sensor_data(values):
 
-    logger.success(f"Processing data packet -> {data_points}")
+    logger.success(f"Processing data packet -> {values}")
 
     # logger.success(f"Processing data point generated on device at {timestamp} with data -> {data_points}")
 
@@ -88,11 +88,13 @@ async def comcon_task(websocket):
         message = json.loads(message)
         logger.info(f"Received a request from COMCON -> {message}")
 
+        # returns the list of devices connected to the server
         if message["method"] == "list":
             resp = json.dumps(ACTIVE_DEVICES)
             logger.info(f"Sending list of devices to COMCON. -> {resp}")
             await zmq_sock.send_string(resp)
         
+        # Create a JSON RPC packet, send it to device
         elif message["method"] == "get_data_packet":
             device_addr_index = int(message["params"]["device_addr_index"])
             device_addr = ACTIVE_DEVICES[device_addr_index]
@@ -103,9 +105,29 @@ async def comcon_task(websocket):
 
             logger.info(f"{device_addr} -> {message}")
             
-        
+            # Check if we have the correct websocket object with us
+            current_connection = f"{websocket.remote_address[0]}:{websocket.remote_address[1]}"
+            if current_connection == device_addr:
+                await websocket.send(str(message))
+                print("Msg sent to device...waiting for response")
+                # wait for the resp here.
+
+                
         else:
             await zmq_sock.send_string("unknown")
+
+async def duck(websocket):
+    while True:
+        print(ACTIVE_DEVICES)
+        
+        print(websocket)
+        print(websocket.remote_address)
+
+        if len(ACTIVE_DEVICES) > 0:
+            print("Length of ACTIVE DEVICES is more than 0")
+            await websocket.send("Duck Duck Go!")
+        
+        await asyncio.sleep(1)
 
 
 
