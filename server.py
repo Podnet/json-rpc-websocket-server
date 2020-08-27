@@ -75,7 +75,8 @@ def clean_data(message):
         obj["jsonrpc"] = "2.0"
 
         # Delete 'src' key from data
-        del obj["src"]
+        if "src" in obj:
+            del obj["src"]
 
     return json.dumps(obj)
 
@@ -108,27 +109,14 @@ async def comcon_task(websocket):
             # Check if we have the correct websocket object with us
             current_connection = f"{websocket.remote_address[0]}:{websocket.remote_address[1]}"
             if current_connection == device_addr:
-                await websocket.send(str(message))
+                await websocket.send(json.dumps(message))
                 print("Msg sent to device...waiting for response")
-                # wait for the resp here.
 
+                # Cannot use .recv() here
+                # print(await websocket.recv())
                 
         else:
             await zmq_sock.send_string("unknown")
-
-async def duck(websocket):
-    while True:
-        print(ACTIVE_DEVICES)
-        
-        print(websocket)
-        print(websocket.remote_address)
-
-        if len(ACTIVE_DEVICES) > 0:
-            print("Length of ACTIVE DEVICES is more than 0")
-            await websocket.send("Duck Duck Go!")
-        
-        await asyncio.sleep(1)
-
 
 
 async def ws_loop(websocket, path):

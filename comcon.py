@@ -24,7 +24,8 @@ def help():
 
 def list_devices(socket):
     print("List of devices connected to server.")
-    socket.send_string("list")
+    req = Request("list")
+    socket.send_string(str(req))
     resp = socket.recv().decode('utf-8')
     devices = json.loads(resp)
 
@@ -34,7 +35,7 @@ def list_devices(socket):
 
 
 def fetch_data_packet(socket, device_addr, timestamp):
-    req = Request("get_data_packet", timestamp=timestamp)
+    req = Request("get_data_packet", timestamp=timestamp, device_addr_index=device_addr)
     print(f"{device_addr} -> {req}")
     socket.send_string(str(req))
     resp = socket.recv().decode("utf-8")

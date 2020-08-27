@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import json
 import asyncio
 import websockets
 from jsonrpcclient.requests import Request
@@ -14,7 +14,17 @@ async def send_sensor_data(websocket):
 
 async def recv_msg(websocket):
     while True:
-        print(await websocket.recv())
+        message = await websocket.recv()
+        print(message)
+        message = json.loads(message)
+
+        if "method" in message and message["method"] == "get_data_packet":
+            await asyncio.sleep(2)
+            
+            data = {"values": "[1,2,3,4,5,6,7,8,9,10]"}
+
+            await websocket.send(json.dumps(data))
+            print("Sent back a response for get_packet_data")
 
 
 async def handler():
