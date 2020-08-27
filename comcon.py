@@ -39,7 +39,7 @@ def fetch_data_packet(socket, device_addr, timestamp):
     print(f"{device_addr} -> {req}")
     socket.send_string(str(req))
     resp = socket.recv().decode("utf-8")
-    print(resp)
+    print(f"Response -> {resp}")
 
 def send_to_device(socket, command):
     print("Sending a message to device.")

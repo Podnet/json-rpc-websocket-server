@@ -3,6 +3,7 @@ import json
 import asyncio
 import websockets
 from jsonrpcclient.requests import Request
+from jsonrpcclient.response import SuccessResponse
 
 SERVER_URL = "ws://localhost:7000"
 
@@ -21,10 +22,10 @@ async def recv_msg(websocket):
         if "method" in message and message["method"] == "get_data_packet":
             await asyncio.sleep(2)
             
-            data = {"values": "[1,2,3,4,5,6,7,8,9,10]"}
+            resp = SuccessResponse(jsonrpc="2.0", id=message["id"], result={"get_data_packet": "[1,2,3,4,5,6,7,8,9,10]"})
 
-            await websocket.send(json.dumps(data))
-            print("Sent back a response for get_packet_data")
+            await websocket.send(str(resp))
+            print(f"Sent back a response for get_packet_data -> {str(resp)}")
 
 
 async def handler():

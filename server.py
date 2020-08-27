@@ -78,7 +78,7 @@ def clean_data(message):
         if "src" in obj:
             del obj["src"]
 
-    return json.dumps(obj)
+    return json.dumps(obj), obj
 
 
 async def comcon_task(websocket):
@@ -134,19 +134,29 @@ async def ws_loop(websocket, path):
 
             # Clean the msg and log it
             logger.debug(f"Message: {message}")
-            cleaned_data = clean_data(message)
+            cleaned_data, json_parsed_clean_data = clean_data(message)
 
-            # Creating response
-            response = await dispatch(cleaned_data)
+            # Is the message for comcon?
+            if "result" in json_parsed_clean_data and "get_data_packet" in json_parsed_clean_data["result"]:
+                # It's a message for COMCON
+                # Push it into the async queue
+                print(json_parsed_clean_data)
+                await zmq_sock.send_string(cleaned_data)
+            
 
-            if not response.wanted:
-                logger.info("Response not wanted by client")
+            # Go ahead with normal parsing of the message
+            else:
+                # Creating response
+                response = await dispatch(cleaned_data)
 
-            # Respond to the client, if required
-            if response.wanted:
-                logger.debug(f"Response: {response}")
-                await websocket.send(str(response))
-                logger.success("Response sent")
+                if not response.wanted:
+                    logger.info("Response not wanted by client")
+
+                # Respond to the client, if required
+                if response.wanted:
+                    logger.debug(f"Response: {response}")
+                    await websocket.send(str(response))
+                    logger.success("Response sent")
 
     except websockets.exceptions.ConnectionClosedError as e:
         logger.error("Connection closed unexpectedly")
