@@ -2,3 +2,4 @@ venv/
 .idea/
 server_log_*.log
 .vscode/
+server_datalog_*.log
