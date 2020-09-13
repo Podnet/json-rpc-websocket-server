@@ -53,17 +53,18 @@ async def verify_device(device_id):
 @method
 async def sensor_data(values):
 
-    logger.success(f"Processing data packet -> {values}")
+    # logger.success(f"Processing data packet -> {values}")
+
+    values = values.split(",")
+    timestamp = int(values[0].strip())
+
+    logger.success(f"Received data packet with timestamp -> {timestamp}")
 
     # logger.success(f"Processing data point generated on device at {timestamp} with data -> {data_points}")
 
     # Do some processing on `data_points` here
 
-    # Return the timestamp of the received msg to let the device know that 
-    # the server has processed the data.
-    # return str(timestamp)
-
-    return "some-timestamp"
+    return timestamp
 
 
 # For cleaning incoming data from client
@@ -133,7 +134,7 @@ async def ws_loop(websocket, path):
                 ACTIVE_DEVICES.append(device_addr)
 
             # Clean the msg and log it
-            logger.debug(f"Message: {message}")
+            # logger.debug(f"Message: {message}")
             cleaned_data, json_parsed_clean_data = clean_data(message)
 
             # Is the message for comcon?
@@ -156,7 +157,7 @@ async def ws_loop(websocket, path):
                 if response.wanted:
                     logger.debug(f"Response: {response}")
                     await websocket.send(str(response))
-                    logger.success("Response sent")
+                    # logger.success("Response sent")
 
     except websockets.exceptions.ConnectionClosedError as e:
         logger.error("Connection closed unexpectedly")
