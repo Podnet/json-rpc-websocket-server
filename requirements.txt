@@ -9,4 +9,4 @@ pyfiglet==0.8.post1
 pyrsistent==0.16.0
 pyzmq==19.0.2
 six==1.14.0
-websockets==8.1
+websockets==9.1
